@@ -1288,6 +1288,7 @@ select.control{ appearance: none; -webkit-appearance: none; padding-right: 30px;
         <button type="button" class="btn btn-ghost bgm-preset" data-preset="1">可爱 2</button>
         <button type="button" class="btn btn-ghost bgm-preset" data-preset="2">可爱 3</button>
         <button type="button" class="btn btn-ghost" id="bgmUploadBtn">上传 BGM</button>
+        <button type="button" class="btn btn-ghost" id="bgmPreviewBtn" hidden>试听</button>
         <button type="button" class="btn btn-ghost" id="bgmClearBtn" hidden>移除</button>
         <input type="file" id="bgmFile" accept="audio/*" hidden>
       </div>
@@ -2975,13 +2976,45 @@ try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
   var bgmName = '';
   var bgmPreset = -1;
   var bgmCtx = null, bgmDest = null, bgmSource = null;
+  var pvCtx = null, pvSource = null, pvGain = null, pvPlaying = false;
 
   function refreshBgmUI() {
     var presets = document.querySelectorAll('.bgm-preset');
     presets.forEach(function (btn, i) { btn.classList.toggle('is-active', bgmPreset === i); });
-    var clearBtn = $('#bgmClearBtn'), upBtn = $('#bgmUploadBtn');
+    var clearBtn = $('#bgmClearBtn'), upBtn = $('#bgmUploadBtn'), pvBtn = $('#bgmPreviewBtn');
     if (clearBtn) clearBtn.hidden = !bgmBuffer;
     if (upBtn) upBtn.textContent = bgmBuffer ? '换一首' : '上传 BGM';
+    if (pvBtn) { pvBtn.hidden = !bgmBuffer; pvBtn.textContent = pvPlaying ? '暂停试听' : '试听'; }
+  }
+
+  function stopPreview() {
+    try { if (pvSource) pvSource.stop(); } catch (e) {}
+    try { if (pvCtx) pvCtx.close(); } catch (e) {}
+    pvCtx = pvSource = pvGain = null; pvPlaying = false;
+  }
+
+  function playPreview() {
+    if (!bgmBuffer) return;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    stopPreview();
+    try {
+      pvCtx = new AC();
+      pvSource = pvCtx.createBufferSource();
+      pvSource.buffer = bgmBuffer;
+      pvSource.loop = true;
+      pvGain = pvCtx.createGain(); pvGain.gain.value = 0.9;
+      pvSource.connect(pvGain); pvGain.connect(pvCtx.destination);
+      if (pvCtx.state === 'suspended' && typeof pvCtx.resume === 'function') pvCtx.resume();
+      pvSource.start();
+      pvPlaying = true;
+    } catch (e) { pvCtx = pvSource = pvGain = null; pvPlaying = false; }
+    refreshBgmUI();
+  }
+
+  function togglePreview() {
+    if (pvPlaying) { stopPreview(); } else { playPreview(); }
+    refreshBgmUI();
   }
 
   function _decodeBgm(ab, name, presetIdx) {
@@ -2993,6 +3026,7 @@ try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
         bgmBuffer = buf; bgmName = name; bgmPreset = presetIdx;
         refreshBgmUI(); toast('BGM 已加入，存视频时会带上');
         tmp.close();
+        playPreview();
       }, function () { toast('音频解析失败，请换一首'); tmp.close(); });
     };
     if (tmp.state === 'suspended' && typeof tmp.resume === 'function') {
@@ -3018,6 +3052,7 @@ try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
   }
 
   function clearBgm() {
+    stopPreview();
     bgmBuffer = null; bgmName = ''; bgmPreset = -1;
     stopBgmForRecord();
     refreshBgmUI();
@@ -3025,6 +3060,7 @@ try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
 
   function startBgmForRecord() {
     if (!bgmBuffer) return null;
+    stopPreview();
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return null;
     try {
@@ -3767,6 +3803,7 @@ try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
       btn.addEventListener('click', function () { loadPresetBgm(+btn.dataset.preset); });
     });
     $('#bgmUploadBtn').addEventListener('click', function () { $('#bgmFile').click(); });
+    $('#bgmPreviewBtn').addEventListener('click', togglePreview);
     $('#bgmClearBtn').addEventListener('click', clearBgm);
     $('#bgmFile').addEventListener('change', function (e) {
       var f = e.target.files && e.target.files[0];
