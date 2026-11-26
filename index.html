@@ -848,6 +848,220 @@ select.control{ appearance: none; -webkit-appearance: none; padding-right: 30px;
   .slip{ max-width: none; box-shadow: none; }
   .slip, .printer{ break-inside: avoid; }
 }
+.toggle-row{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:10px; }
+.toggle-row span{ font-size:12.5px; color:var(--ui-ink); }
+.toggle-row span small{ display:block; font-size:10px; color:var(--ui-ink-2); margin-top:2px; }
+
+.style-grid{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.style-btn{
+  display: grid; justify-items: center; align-content: center; gap: 3px;
+  padding: 9px 6px; border: 1px solid var(--ui-line); border-radius: 11px;
+  background: var(--ui-field); cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.style-btn span{ font-size: 11px; letter-spacing: .04em; color: var(--ui-ink-2); }
+.style-btn small{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 8px; letter-spacing: .18em; opacity: .75; }
+.style-btn[aria-pressed="true"]{
+  border-color: hsl(var(--hue) 60% 60%);
+  background: hsl(var(--hue) 70% 96%);
+  box-shadow: 0 0 0 2px hsl(var(--hue) 70% 62% / .26);
+}
+.style-btn[aria-pressed="true"] span{ color: hsl(var(--hue) 52% 34%); font-weight: 600; }
+[data-night="on"] .style-btn[aria-pressed="true"]{ background: hsl(var(--hue) 40% 24%); box-shadow: 0 0 0 2px hsl(var(--hue) 70% 62% / .4); }
+[data-night="on"] .style-btn[aria-pressed="true"] span{ color: hsl(var(--hue) 60% 84%); }
+
+/* ===== 通用点线账目行（奶油 / 格框共用） ===== */
+.tk-ledger{ margin: 10px 0 4px; }
+.tk-ledger-head{ position:relative; display:flex; align-items:center; justify-content:center; gap:10px; font-size:12px; font-weight:600; letter-spacing:.18em; color:var(--tk-deep); }
+.tk-ledger-head::before, .tk-ledger-head::after{ content:""; flex:1 1 auto; border-top:1px dashed var(--tk-hair); }
+.tk-ledger-head .tk-stamp{ position:absolute; right:0; top:50%; transform:translateY(-50%); }
+.tk-ledger-note{ text-align:center; font-size:9.5px; color:var(--tk-ink-3); margin:6px 0 2px; }
+.tk-rows{ padding:4px 2px 0; }
+.tk-row{ display:flex; align-items:baseline; gap:8px; padding:7px 0; }
+.tk-row-k{ flex:0 0 auto; font-size:12px; letter-spacing:.04em; color:var(--tk-ink-2); }
+.tk-row-k em{ font-family:var(--tk-mono); font-style:normal; font-size:8px; letter-spacing:.16em; color:var(--tk-ink-3); margin-left:5px; }
+.tk-dots{ flex:1 1 auto; border-bottom:1px dotted var(--tk-hair); transform:translateY(-3px); min-width:12px; }
+.tk-row-v{ flex:0 0 auto; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--tk-ink); }
+.tk-row.hl .tk-row-k{ color:var(--tk-deep); font-weight:600; }
+.tk-row.hl .tk-row-v{ color:var(--tk-deep); font-size:14px; }
+
+/* ===== 样式一：奶油信笺（暖黄小票：顶部色带居中品牌，角色场景在明细之后，点线引导结算行） ===== */
+.slip.s-cream{
+  background-color:#fff;
+  background-image: radial-gradient(hsl(var(--hue) 30% 92%) 1px, transparent 1.3px);
+  background-size: 12px 12px;
+  border: 1px solid hsl(var(--hue) 25% 78%);
+  border-radius: 18px;
+  box-shadow: inset 0 0 0 6px #fff, inset 0 0 0 7px hsl(var(--hue) 30% 90%),
+    0 16px 30px -22px hsl(var(--hue) 20% 20% / .55);
+}
+.s-cream .tk-bar{
+  height: 30px; border-radius: 0;
+  background-color: hsl(var(--hue) 72% 90%);
+  background-image: radial-gradient(hsl(var(--hue) 32% 56%) 1.6px, transparent 2.1px);
+  background-size: 13px 13px;
+}
+.s-cream .tk-tail{
+  height: 24px;
+  background-color: hsl(var(--hue) 72% 90%);
+  background-image: radial-gradient(hsl(var(--hue) 32% 56%) 1.6px, transparent 2.1px);
+  background-size: 13px 13px;
+}
+.s-cream::before{ content:"★"; position:absolute; left:12px; top:40px; color:hsl(var(--hue) 45% 82%); font-size:13px; }
+.s-cream::after{ content:"♥"; position:absolute; right:13px; bottom:30px; color:hsl(var(--hue) 60% 84%); font-size:13px; }
+.s-cream .tk-brand{
+  flex-direction: column; text-align:center; gap:7px;
+  background: transparent; border-radius: 18px; padding: 16px 14px 12px; margin: 2px 0 6px;
+}
+.s-cream .tk-logo{ display:none; }
+.s-cream .tk-name h3{ font-size: 22px; letter-spacing: .14em; }
+.s-cream .tk-name p{ margin-top:3px; }
+.s-cream .tk-name p, .s-cream .tk-name em{ text-align:center; }
+.s-cream .tk-meta{ border-bottom: 1px dashed hsl(var(--hue) 40% 84%); }
+.s-cream .tk-hero{
+  background-color: #fff; border: 1px solid hsl(var(--hue) 40% 88%);
+  border-radius: 18px; padding: 18px 14px 13px; margin: 12px 0 6px;
+}
+.s-cream .tk-hero img{ height: 132px !important; }
+.s-cream .tk-ledger{ background: hsl(var(--hue) 60% 96%); border-radius: 16px; padding: 10px 14px 6px; }
+.s-cream .tk-quote{ font-style: normal; }
+
+/* ===== 样式二：烘焙手账（衬线斜体 + 虚线分隔，角色大图在明细之后；颜色跟随色相可调） ===== */
+.slip.s-bakery{
+  background-color: hsl(var(--hue) 26% 98.5%);
+  background-image: radial-gradient(hsl(var(--hue) 14% 30% / .09) 1px, transparent 1.5px);
+  background-size: 7px 7px;
+  border: 2px solid var(--tk-deep);
+  border-radius: 10px;
+  box-shadow: 0 16px 30px -22px hsl(var(--hue) 20% 20% / .55);
+  --tk-ink: hsl(var(--hue) 14% 24%);
+  --tk-ink-2: hsl(var(--hue) 10% 42%);
+  --tk-ink-3: hsl(var(--hue) 10% 56%);
+  --tk-hair: hsl(var(--hue) 14% 30% / .38);
+  --tk-soft-1: hsl(var(--hue) 26% 95%);
+  --tk-soft-2: hsl(var(--hue) 26% 95%);
+  --tk-deep: hsl(var(--hue) 38% 28%);
+  --tk-deep-2: hsl(var(--hue) 30% 38%);
+}
+.s-bakery::before{ content:""; position:absolute; inset:12px; border:1.5px dashed var(--tk-deep); border-radius:6px; pointer-events:none; }
+.s-bakery .tk-bar{ background: var(--tk-deep); height: 8px; }
+.s-bakery .tk-tail{ background: var(--tk-deep); height: 8px; }
+.s-bakery .tk-perf{ position:absolute; left:0; right:0; height:16px; background-repeat:repeat-x; background-size:20px 16px; pointer-events:none; z-index:2; }
+.s-bakery .tk-perf-t{ top:0; }
+.s-bakery .tk-perf-b{ bottom:0; }
+.s-bakery .tk-meta{ border-bottom: 1px dashed var(--tk-hair); letter-spacing: .22em; }
+.s-bakery .tk-brand{ justify-content: center; text-align: center; flex-direction: column; gap: 8px; padding: 14px 0 10px; }
+.s-bakery .tk-logo{ background: var(--tk-deep); color: #fff; border-radius: 4px; }
+.s-bakery .tk-name h3{ font-family: Georgia, "Times New Roman", "Songti SC", serif; font-style: italic; letter-spacing: .02em; font-size: 24px; }
+.s-bakery .tk-name p, .s-bakery .tk-name em{ text-align: center; }
+.s-bakery .tk-hero{
+  background-color: transparent;
+  background-image: radial-gradient(hsl(var(--hue) 20% 30% / .14) 1px, transparent 1.6px); background-size: 13px 13px;
+  border: 0; border-radius: 0; padding: 16px 8px 10px; margin: 6px 0;
+}
+.s-bakery .tk-hero img{ height: 150px !important; filter: none; }
+.s-bakery .tk-hero p{ color: var(--tk-ink-2); }
+.s-bakery .tk-item{ border-bottom: 1px dashed var(--tk-hair); }
+/* 结算区：双线压顶，金额走纯文字行，不套盒子 */
+.s-bakery .tk-split::before{ background: var(--tk-deep); }
+.s-bakery .tk-split::after{ background: var(--tk-deep); opacity: .85; }
+.s-bakery .tk-sum{ border-top: 2px solid var(--tk-deep); padding-top: 10px; }
+.s-bakery .tk-sum-l b{ color: var(--tk-deep); }
+.s-bakery .tk-two{ gap: 0; }
+.s-bakery .tk-chip{ background: transparent; border-radius: 0; border-bottom: 1px dashed var(--tk-hair); }
+.s-bakery .tk-stamp{ color: var(--tk-deep); }
+.s-bakery .tk-end p{ letter-spacing: .12em; }
+
+/* ===== 样式三：格框少女（外框收边 + 拍立得相框角色，结算为描边点线账卡） ===== */
+.slip.s-panel{
+  background-color:#fff;
+  border: 1px solid hsl(var(--hue) 25% 86%);
+  border-radius: 10px;
+  box-shadow: -8px 8px 0 hsl(var(--hue) 30% 90% / .6),
+    0 16px 30px -22px hsl(var(--hue) 20% 20% / .55);
+}
+.s-panel .tk-paper{ position:absolute; inset:-6px -10px -10px -6px; background:hsl(var(--hue) 35% 93%); border-radius:10px; z-index:0; }
+.s-panel .tk-holes{ position:absolute; left:7px; top:22px; bottom:22px; width:16px; background-repeat:repeat-y; background-size:16px 20px; z-index:1; pointer-events:none; }
+.s-panel .tk-clip{ position:absolute; top:15px; right:16px; z-index:2; color:hsl(var(--hue) 20% 58%); transform:rotate(16deg); }
+.s-panel .tk-in, .s-panel .tk-code, .s-panel .tk-end{ position:relative; z-index:1; }
+.s-panel .tk-in{ padding-left:28px; }
+.s-panel .tk-bar{ height: 6px; border-radius: 0; }
+.s-panel .tk-brand{
+  flex-direction: column; text-align:center; gap:7px;
+  border: 1px dashed hsl(var(--hue) 45% 78%); border-radius: 16px; padding: 16px 12px; background: #fff; margin: 8px 0 4px;
+}
+.s-panel .tk-meta{ background: hsl(var(--hue) 60% 95%); border-radius: 999px; padding: 5px 12px; margin: 2px 0 0; border-bottom: 0; }
+.s-panel .tk-hero{
+  background: transparent; border: 0; border-radius: 0;
+  padding: 6px 0; margin: 12px 0 6px; box-shadow: none;
+}
+.s-panel .tk-hero img{ height: 124px !important; }
+.s-panel .tk-ledger{ background: #fff; border: 1px solid hsl(var(--hue) 40% 88%); border-radius: 14px; padding: 10px 14px 6px; }
+.s-panel .tk-stamp{ border-color: hsl(var(--hue) 50% 70%); }
+.s-panel .tk-quote{ border-top: 1px dashed hsl(var(--hue) 40% 86%); }
+
+/* ===== 样式四：像素 LCD（Pastel 点阵：硬边方块 + 偏移硬投影，颜色跟随色相可调；参考粉紫像素聊天界面） ===== */
+.slip.s-pixel{
+  background-color:#fff;
+  background-image: radial-gradient(hsl(var(--hue) 45% 90%) 1px, transparent 1.4px);
+  background-size: 10px 10px;
+  border: 3px solid hsl(var(--hue) 30% 18%); border-radius: 4px;
+  box-shadow: inset 0 0 0 2px hsl(var(--hue) 70% 96%), 7px 7px 0 hsl(var(--hue) 30% 18% / .25);
+  --tk-ink: hsl(var(--hue) 32% 24%);
+  --tk-ink-2: hsl(var(--hue) 24% 40%);
+  --tk-ink-3: hsl(var(--hue) 20% 54%);
+  --tk-hair: hsl(var(--hue) 30% 40% / .5);
+  --tk-soft-1: hsl(var(--hue) 60% 93%);
+  --tk-soft-2: hsl(var(--hue) 60% 93%);
+  --tk-deep: hsl(var(--hue) 42% 34%);
+  --tk-deep-2: hsl(var(--hue) 36% 30%);
+  font-family: var(--tk-mono), monospace;
+}
+.s-pixel .tk-bar{ background: hsl(var(--hue) 40% 90%); height: 28px; border-bottom: 3px solid hsl(var(--hue) 30% 18%); position:relative; }
+.s-pixel::before{ content:""; position:absolute; right:0; top:44px; bottom:26px; width:11px; background:hsl(var(--hue) 70% 92%); border-left:2px solid hsl(var(--hue) 30% 18%); }
+.s-pixel::after{ content:""; position:absolute; right:1px; top:52px; width:9px; height:28px; background:hsl(var(--hue) 30% 18%); }
+.s-pixel .tk-tail{ height: 18px; background:hsl(var(--hue) 70% 92%); border-top:3px solid hsl(var(--hue) 30% 18%); }
+.s-pixel .tk-winbtns{ position:absolute; right:10px; top:50%; transform:translateY(-50%); display:flex; gap:6px; }
+.s-pixel .tk-winbtns i{ width:13px; height:13px; background:#fff; border:2px solid hsl(var(--hue) 30% 18%); display:block; }
+.s-pixel .tk-winbtns i.x{ position:relative; }
+.s-pixel .tk-winbtns i.x::before, .s-pixel .tk-winbtns i.x::after{ content:""; position:absolute; left:1px; right:1px; top:50%; height:2px; background:hsl(var(--hue) 30% 18%); transform:translateY(-50%) rotate(45deg); }
+.s-pixel .tk-winbtns i.x::after{ transform:translateY(-50%) rotate(-45deg); }
+.s-pixel .tk-meta{ border-bottom: 2px dashed hsl(var(--hue) 30% 40% / .5); letter-spacing: .14em; }
+.s-pixel .tk-brand{
+  flex-direction: column; text-align: center; gap: 8px;
+  border: 3px solid hsl(var(--hue) 42% 38%); background: #fff; border-radius: 6px;
+  box-shadow: 4px 4px 0 hsl(var(--hue) 42% 38% / .3); padding: 14px 10px; margin: 6px 0;
+}
+.s-pixel .tk-logo{ background: hsl(var(--hue) 42% 38%); color: #fff; border-radius: 2px; box-shadow: inset 0 0 0 2px hsl(var(--hue) 70% 96%); }
+.s-pixel .tk-name h3{ font-family: var(--tk-mono), monospace; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; font-size: 18px; }
+.s-pixel .tk-name p, .s-pixel .tk-name em{ text-align: center; }
+.s-pixel .tk-hero{
+  background: #fff; border: 3px solid hsl(var(--hue) 42% 38%); border-radius: 6px;
+  padding: 14px 12px 10px; margin: 10px 0; box-shadow: 4px 4px 0 hsl(var(--hue) 42% 38% / .3);
+}
+.s-pixel .tk-hero img{ filter: none; image-rendering: pixelated; }
+.s-pixel .tk-hero p{ color: var(--tk-deep-2); letter-spacing: .2em; }
+.s-pixel .tk-item{ border-bottom: 1px dashed var(--tk-hair); }
+.s-pixel .tk-type, .s-pixel .tk-amt b{ font-family: var(--tk-mono), monospace; }
+.s-pixel .tk-split::before{ background: var(--tk-deep); height: 2px; }
+.s-pixel .tk-split::after{ display: none; }
+/* 结算区：合计压成纯色横条白字，金额为硬边偏移盒子 */
+.s-pixel .tk-sum{ border-top: 3px solid var(--tk-deep); }
+.s-pixel .tk-sum-l{ background: var(--tk-deep); border-radius: 4px; padding: 8px 10px; }
+.s-pixel .tk-sum-l small{ color: hsl(var(--hue) 70% 90%); }
+.s-pixel .tk-sum-l b{ color: #fff; }
+.s-pixel .tk-two{ gap: 8px; }
+.s-pixel .tk-chip{ background: #fff; border: 2px solid hsl(var(--hue) 42% 38%); border-radius: 4px; box-shadow: 3px 3px 0 hsl(var(--hue) 42% 38% / .25); }
+.s-pixel .tk-chip b{ font-family: var(--tk-mono), monospace; }
+.s-pixel .tk-stamp{ color: var(--tk-deep); border: 2px solid var(--tk-deep); border-radius: 2px; }
+.s-pixel .tk-code svg{ color: var(--tk-ink); }
+.s-pixel .tk-end p{ letter-spacing: .14em; }
+.s-pixel .tk-tail{ background: var(--tk-deep); height: 6px; }
+
+.tk-dotlayer{ position:absolute; inset:0; z-index:0; pointer-events:none; }
+.tk-basebg{ position:absolute; inset:0; z-index:0; background:#fff; pointer-events:none; }
+.slip > .tk-bar, .slip > .tk-in, .slip > .tk-code{ position:relative; z-index:1; }
+
 </style>
 </head>
 <body>
@@ -886,6 +1100,17 @@ select.control{ appearance: none; -webkit-appearance: none; padding-right: 30px;
       </div>
     </section>
 
+
+    <section class="panel">
+      <div class="panel-title"><span class="dot"></span>小票样式<small>STYLE</small></div>
+      <div class="panel-body">
+        <div class="style-grid" id="styleGrid"></div>
+        <div class="toggle-row">
+          <span>波点背景<small>开关小票纸上的波点纹理</small></span>
+          <button class="switch" id="dotToggle" type="button" role="switch" aria-pressed="true"></button>
+        </div>
+      </div>
+    </section>
 
     <section class="panel">
       <div class="panel-title"><span class="dot"></span>票面纹理<small>TEXTURE</small></div>
@@ -1294,9 +1519,45 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     ginghamTile = c.toDataURL('image/png');
     return ginghamTile;
   }
+  /* 奶油上下色带波点瓦片 */
+  function bandTile(hue) {
+    var bk = 'band' + hue;
+    if (ginghamCache[bk]) return ginghamCache[bk];
+    var c = document.createElement('canvas'); c.width = 13; c.height = 13;
+    var x = c.getContext('2d');
+    x.fillStyle = 'hsla(' + hue + ',32%,56%,.9)';
+    x.beginPath(); x.arc(6.5, 6.5, 1.6, 0, 6.2832); x.fill();
+    ginghamCache[bk] = c.toDataURL('image/png'); return ginghamCache[bk];
+  }
+  /* 活页打孔孔位瓦片（竖排重复） */
+  function holeStrip(hue) {
+    var key = 'hole' + hue;
+    if (ginghamCache[key]) return ginghamCache[key];
+    var c = document.createElement('canvas'); c.width = 16; c.height = 20;
+    var x = c.getContext('2d');
+    x.fillStyle = 'hsla(' + hue + ',32%,40%,.92)';
+    x.beginPath(); x.arc(8, 10, 4.2, 0, 6.2832); x.fill();
+    x.strokeStyle = 'hsla(' + hue + ',20%,72%,.7)'; x.lineWidth = 1;
+    x.beginPath(); x.arc(8, 10, 4.2, 0, 6.2832); x.stroke();
+    ginghamCache[key] = c.toDataURL('image/png'); return ginghamCache[key];
+  }
+  /* 邮票齿孔瓦片（白色半圆孔，横排重复） */
+  function perfStrip() {
+    if (ginghamCache.perf) return ginghamCache.perf;
+    var c = document.createElement('canvas'); c.width = 20; c.height = 16;
+    var x = c.getContext('2d');
+    x.fillStyle = '#ffffff'; x.beginPath(); x.arc(10, 8, 7, 0, 6.2832); x.fill();
+    ginghamCache.perf = c.toDataURL('image/png'); return ginghamCache.perf;
+  }
 
   /* ---------- 渲染小票 ---------- */
   function renderSlip() {
+    var STYLE_LIST = ['classic', 'cream', 'bakery', 'panel', 'pixel'];
+    var st = STYLE_LIST.indexOf(state.style) >= 0 ? state.style : 'classic';
+    state.style = st;
+    var slipEl = $('#slip');
+    slipEl.className = 'slip s-' + st;
+    slipEl.style.backgroundImage = 'none'; slipEl.style.backgroundSize = 'auto';
     var t = effTotal(), paid = effPaid();
     var lines = state.items.map(function (it, i) {
       return '<div class="tk-item">' +
@@ -1322,55 +1583,89 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
       if (!base) return 'RP';
       return STAMP_PINYIN[base] || 'RP';
     };
-    var stamp = '<div class="stamp"><b>' + esc(stampDisplay()) + '</b><small>' + esc(stampEnAuto()) + '</small></div>';
 
     var tk = formatTicket(state.when);
-    var cn = String(state.clubCn || '').replace(/[^\u4e00-\u9fa5]/g, '');
     var en = String(state.clubEn || '').replace(/[^A-Za-z0-9]/g, '');
     var head = String(state.clubCn || '').trim();
     var mark = head.length >= 2 ? head.slice(0, 2).toUpperCase() : (en ? en.slice(0, 3).toUpperCase() : 'RP');
     var count = state.items.length;
     var ch = CHARS[state.character] || CHARS.kitty;
+    var heroSrc = ch.img, heroName = ch.name, heroStyle = 'height:' + ch.h + 'px';
 
-    $('#slip').innerHTML =
-      '<div class="tk-bar"></div>' +
-      '<div class="tk-in">' +
-        '<div class="tk-meta"><span>SETTLEMENT · 结单凭证</span><span>NO. ' + esc(state.no) + '</span></div>' +
-        '<div class="tk-brand">' +
-          (state.logoImg
-            ? '<div class="tk-logo tk-logo-img"><img src="' + state.logoImg + '" alt="徽章头像"></div>'
-            : '<div class="tk-logo">' + esc(mark) + '</div>') +
-          '<div class="tk-name">' +
-            '<h3>' + esc(state.clubCn || '小店') + '</h3>' +
-            '<p>' + esc(state.clubEn || '') + '</p>' +
-            '<em>' + esc(slogan()) + '</em>' +
-          '</div>' +
-        '</div>' +
-        '<div class="tk-hero" style="background-image:url(' + gingham() + ')"><img src="' + ch.img + '" style="height:' + ch.h + 'px" alt="' + esc(ch.name) + '"><p>' + esc(ch.name) + ' · CHARACTER</p></div>' +
-        '<div class="tk-time">' +
-          '<span>' + tk.day + '</span><i></i>' +
-          '<span>' + tk.min + '</span><i></i>' +
-          '<span>共 ' + count + ' 项</span>' +
-        '</div>' +
-        '<div class="tk-cols"><span>明细 ITEM</span><span>数量 · 金额</span></div>' +
-        '<div class="tk-lines">' + lines + '</div>' +
-        '<div class="tk-split"></div>' +
-        '<div class="tk-sum">' +
-          '<div class="tk-sum-l"><small>TOTAL · 合计</small><b>' + money(t, false) + '</b>' +
-          (discountRate() < 1 ? '<small style="margin-left:6px;color:var(--tk-ink-2)">' + discountLabel() + '</small>' : '') + '</div>' +
-          '<div class="tk-stamp"><b>' + esc(stampDisplay()) + '</b><small>' + esc(stampEnAuto()) + '</small></div>' +
-        '</div>' +
-        '<div class="tk-two">' +
-          '<div class="tk-chip a"><small>实付 PAID</small><b>' + money(paid, false) + '</b></div>' +
-          '<div class="tk-chip b"><small>卡内余额 BALANCE</small><b>' + money(num(state.balance), false) + '</b></div>' +
-        '</div>' +
-        '<div class="tk-quote">' + esc(quote) + '</div>' +
-      '</div>' +
+    var stampBlock = '<div class="tk-stamp"><b>' + esc(stampDisplay()) + '</b><small>' + esc(stampEnAuto()) + '</small></div>';
+    var logoBlock = state.logoImg
+      ? '<div class="tk-logo tk-logo-img"><img src="' + state.logoImg + '" alt="徽章头像"></div>'
+      : '<div class="tk-logo">' + esc(mark) + '</div>';
+    var fBrand = '<div class="tk-brand">' + logoBlock +
+      '<div class="tk-name"><h3>' + esc(state.clubCn || '小店') + '</h3><p>' + esc(state.clubEn || '') + '</p><em>' + esc(slogan()) + '</em></div></div>';
+    var fMeta = '<div class="tk-meta"><span>SETTLEMENT · 结单凭证</span><span>NO. ' + esc(state.no) + '</span></div>';
+    var heroImg = '<img src="' + heroSrc + '" style="' + heroStyle + '" alt="' + esc(heroName) + '">';
+    var fHeroClassic = '<div class="tk-hero" style="background-image:url(' + gingham() + ')">' + heroImg + '<p>' + esc(heroName) + ' · CHARACTER</p></div>';
+    var fHero = '<div class="tk-hero">' + heroImg + '<p>' + esc(heroName) + ' · CHARACTER</p></div>';
+    var fTime = '<div class="tk-time"><span>' + tk.day + '</span><i></i><span>' + tk.min + '</span><i></i><span>共 ' + count + ' 项</span></div>';
+    var fCols = '<div class="tk-cols"><span>明细 ITEM</span><span>数量 · 金额</span></div>';
+    var fLines = '<div class="tk-lines">' + lines + '</div>';
+    var discSmall = discountRate() < 1 ? '<small style="margin-left:6px;color:var(--tk-ink-2)">' + discountLabel() + '</small>' : '';
+    var fSum = '<div class="tk-split"></div><div class="tk-sum">' +
+      '<div class="tk-sum-l"><small>TOTAL · 合计</small><b>' + money(t, false) + '</b>' + discSmall + '</div>' +
+      stampBlock + '</div>';
+    var fChips = '<div class="tk-two">' +
+      '<div class="tk-chip a"><small>实付 PAID</small><b>' + money(paid, false) + '</b></div>' +
+      '<div class="tk-chip b"><small>卡内余额 BALANCE</small><b>' + money(num(state.balance), false) + '</b></div></div>';
+
+    function ledgerRow(k, en, v, hl) {
+      return '<div class="tk-row' + (hl ? ' hl' : '') + '"><span class="tk-row-k">' + esc(k) + '<em>' + esc(en) + '</em></span><i class="tk-dots"></i><b class="tk-row-v">' + v + '</b></div>';
+    }
+    var ledgerRows = ledgerRow('总单合计', 'TOTAL', money(t, false), false) +
+      ledgerRow('实付金额', 'PAID', money(paid, false), true) +
+      ledgerRow('卡内余额', 'BALANCE', money(num(state.balance), false), false);
+    var fLedger = '<div class="tk-ledger">' +
+      '<div class="tk-ledger-head"><span>项目金额</span>' + stampBlock + '</div>' +
+      '<p class="tk-ledger-note">此次结单金额如下，如有疑问可向客服咨询</p>' +
+      '<div class="tk-rows">' + ledgerRows + '</div></div>';
+    var fQuote = '<div class="tk-quote">' + esc(quote) + '</div>';
+
+    var inner;
+    if (st === 'classic') {
+      inner = fMeta + fBrand + fHeroClassic + fTime + fCols + fLines + fSum + fChips + fQuote;
+    } else if (st === 'cream' || st === 'panel') {
+      inner = fBrand + fMeta + fCols + fLines + fHero + fLedger + fQuote;
+    } else {
+      inner = fBrand + fMeta + fCols + fLines + fHero + fSum + fChips + fQuote;
+    }
+
+    var barInner = st === 'pixel' ? '<div class="tk-winbtns"><i></i><i></i><i class="x"></i></div>' : '';
+    var deco = '';
+    if (st === 'panel') {
+      deco = '<div class="tk-paper"></div>' +
+        '<div class="tk-holes" style="background-image:url(' + holeStrip(state.hue) + ')"></div>' +
+        '<div class="tk-clip" aria-hidden="true"><svg viewBox="0 0 24 36" width="20" height="30" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M10 31.5 16.5 9.5a2.6 2.6 0 0 0-4.6-2.4L5.5 22.5a4 4 0 0 0 7 3.9l5.3-10.2a2.2 2.2 0 0 0-3.9-2.1L10.3 21.6"/></svg></div>';
+    } else if (st === 'bakery') {
+      deco = '<div class="tk-perf tk-perf-t" style="background-image:url(' + perfStrip() + ')"></div>' +
+        '<div class="tk-perf tk-perf-b" style="background-image:url(' + perfStrip() + ')"></div>';
+    }
+    $('#slip').innerHTML = '<div class="tk-basebg"></div>' + deco +
+      '<div class="tk-bar">' + barInner + '</div>' +
+      '<div class="tk-in">' + inner + '</div>' +
       '<div class="tk-code">' + barcodeSVG(state.no) + '<p>' + esc(state.no) + '</p></div>' +
       '<div class="tk-in"><div class="tk-end"><p>' + esc(blessText()) + '</p></div></div>' +
       '<div class="tk-tail"></div>';
 
-    // 金额输入框的提示值
+    if (state.dotOn === false) {
+      slipEl.style.backgroundImage = 'none'; slipEl.style.backgroundSize = 'auto';
+    } else {
+      var sc = Math.min(1.6, Math.max(0.7, Number(state.dotScale) || 1));
+      slipEl.style.backgroundImage = 'url(' + dotTile(state.hue, state.dotShape, sc) + ')';
+      slipEl.style.backgroundSize = Math.round(18 * sc) + 'px ' + Math.round(18 * sc) + 'px';
+    }
+
+    if (st === 'cream') {
+      var bt = bandTile(state.hue);
+      var cbar = slipEl.querySelector('.tk-bar'), ctail = slipEl.querySelector('.tk-tail');
+      if (cbar) cbar.style.backgroundImage = 'url(' + bt + ')';
+      if (ctail) ctail.style.backgroundImage = 'url(' + bt + ')';
+    }
+
     var totalInput = $('#total');
     if (totalInput) totalInput.placeholder = fmt(autoTotal());
     var manual = state.total.trim() !== '';
@@ -1422,10 +1717,14 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     $('#hue').value = state.hue;
     var slip = $('#slip');
     if (slip) {
-      var sc = Math.min(1.6, Math.max(0.7, Number(state.dotScale) || 1));
-      var tilePx = Math.round(18 * sc);
-      slip.style.backgroundImage = 'url(' + dotTile(state.hue, state.dotShape, sc) + ')';
-      slip.style.backgroundSize = tilePx + 'px ' + tilePx + 'px';
+      if (state.dotOn === false) {
+        slip.style.backgroundImage = 'none'; slip.style.backgroundSize = 'auto';
+      } else {
+        var sc = Math.min(1.6, Math.max(0.7, Number(state.dotScale) || 1));
+        var tilePx = Math.round(18 * sc);
+        slip.style.backgroundImage = 'url(' + dotTile(state.hue, state.dotShape, sc) + ')';
+        slip.style.backgroundSize = tilePx + 'px ' + tilePx + 'px';
+      }
     }
     $('#nightBtn').setAttribute('aria-pressed', state.night ? 'true' : 'false');
     $$('.swatch').forEach(function (b) {
@@ -1440,6 +1739,25 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     if (sizeVal) sizeVal.textContent = Math.round((state.dotScale || 1) * 100) + '%';
     syncChars();
   }
+  var STYLES = [
+    { k: 'classic', name: '经典', en: 'CLASSIC' },
+    { k: 'cream', name: '奶油信笺', en: 'CREAM' },
+    { k: 'bakery', name: '黑白烘焙', en: 'BAKERY' },
+    { k: 'panel', name: '活页本', en: 'NOTEBOOK' },
+    { k: 'pixel', name: '像素风', en: 'PIXEL' }
+  ];
+  function buildStyles() {
+    $('#styleGrid').innerHTML = STYLES.map(function (s) {
+      return '<button class="style-btn" type="button" data-style="' + s.k + '" aria-pressed="false">' +
+        '<span>' + s.name + '</span><small>' + s.en + '</small></button>';
+    }).join('');
+  }
+  function syncStyles() {
+    $$('.style-btn').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b.dataset.style === state.style));
+    });
+  }
+
   function buildChars() {
     $('#charGrid').innerHTML = Object.keys(CHARS).map(function (k) {
       var c = CHARS[k];
@@ -1517,6 +1835,8 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     var sc = Number(m.dotScale);
     m.dotScale = (sc >= 0.7 && sc <= 1.6) ? sc : 1;
     }
+    if (['classic','cream','bakery','panel','pixel'].indexOf(m.style) < 0) m.style = 'classic';
+    if (m.dotOn === undefined) m.dotOn = true;
     return m;
   }
   function syncForm() {
@@ -1534,6 +1854,7 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     $('#tail').value = state.tail;
     $('#stampText').value = state.stampText;
     $$('[data-cur]').forEach(function (el) { el.textContent = state.cur; });
+    var dotT = $('#dotToggle'); if (dotT) dotT.setAttribute('aria-pressed', String(!!state.dotOn));
   }
 
   /* ---------- 打印 ---------- */
@@ -2036,11 +2357,12 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
       var b = e.target.closest('.swatch');
       if (!b) return;
       state.hue = Number(b.dataset.hue);
-      applyTheme(); save();
+      applyTheme(); renderSlip(); save();
     });
     $('#hue').addEventListener('input', function (e) {
       state.hue = Number(e.target.value);
       document.documentElement.style.setProperty('--hue', state.hue);
+      renderSlip();
       $$('.swatch').forEach(function (b) {
         b.setAttribute('aria-pressed', String(Number(b.dataset.hue) === Number(state.hue)));
       });
@@ -2049,6 +2371,19 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     $('#nightBtn').addEventListener('click', function () {
       state.night = !state.night;
       applyTheme(); save();
+    });
+    $('#dotToggle').addEventListener('click', function () {
+      state.dotOn = !state.dotOn;
+      this.setAttribute('aria-pressed', String(state.dotOn));
+      applyTheme(); renderSlip(); save();
+    });
+    $('#styleGrid').addEventListener('click', function (e) {
+      var b = e.target.closest('.style-btn');
+      if (!b) return;
+      state.style = b.dataset.style;
+      syncStyles(); renderSlip(); save();
+      var s = STYLES.find(function (x) { return x.k === state.style; });
+      toast('已换成「' + (s ? s.name : '经典') + '」小票样式');
     });
 
     $('#printBtn').addEventListener('click', printWithPosition);
@@ -2104,7 +2439,9 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     hue: 352,
     night: false,
     dotShape: 'circle',
-    dotScale: 1
+    dotScale: 1,
+    dotOn: true,
+    style: 'classic'
   };
 
   /* ---------- 盖章署名选项（白名单，仅可从下列名字中选择） ---------- */
@@ -2161,7 +2498,9 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
   buildChars();
   buildSwatches();
   buildShapeRow();
+  buildStyles();
   applyTheme();
+  syncStyles();
   syncForm();
   renderItems();
   renderSlip();
