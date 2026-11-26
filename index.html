@@ -2976,7 +2976,16 @@ try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
   var bgmName = '';
   var bgmPreset = -1;
   var bgmCtx = null, bgmDest = null, bgmSource = null;
-  var pvCtx = null, pvSource = null, pvGain = null, pvPlaying = false;
+  var audioCtx = null;
+  var pvSource = null, pvGain = null, pvPlaying = false;
+
+  function ensureAudioCtx() {
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === 'suspended' && typeof audioCtx.resume === 'function') audioCtx.resume();
+    return audioCtx;
+  }
 
   function refreshBgmUI() {
     var presets = document.querySelectorAll('.bgm-preset');
@@ -2989,26 +2998,25 @@ try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
 
   function stopPreview() {
     try { if (pvSource) pvSource.stop(); } catch (e) {}
-    try { if (pvCtx) pvCtx.close(); } catch (e) {}
-    pvCtx = pvSource = pvGain = null; pvPlaying = false;
+    try { if (pvSource) pvSource.disconnect(); } catch (e) {}
+    try { if (pvGain) pvGain.disconnect(); } catch (e) {}
+    pvSource = pvGain = null; pvPlaying = false;
   }
 
   function playPreview() {
     if (!bgmBuffer) return;
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) return;
+    var ctx = ensureAudioCtx(); if (!ctx) return;
     stopPreview();
     try {
-      pvCtx = new AC();
-      pvSource = pvCtx.createBufferSource();
+      pvSource = ctx.createBufferSource();
       pvSource.buffer = bgmBuffer;
       pvSource.loop = true;
-      pvGain = pvCtx.createGain(); pvGain.gain.value = 0.9;
-      pvSource.connect(pvGain); pvGain.connect(pvCtx.destination);
-      if (pvCtx.state === 'suspended' && typeof pvCtx.resume === 'function') pvCtx.resume();
+      pvGain = ctx.createGain(); pvGain.gain.value = 0.9;
+      pvSource.connect(pvGain); pvGain.connect(ctx.destination);
+      if (ctx.state === 'suspended' && typeof ctx.resume === 'function') ctx.resume();
       pvSource.start();
       pvPlaying = true;
-    } catch (e) { pvCtx = pvSource = pvGain = null; pvPlaying = false; }
+    } catch (e) { pvSource = pvGain = null; pvPlaying = false; }
     refreshBgmUI();
   }
 
@@ -3018,24 +3026,18 @@ try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
   }
 
   function _decodeBgm(ab, name, presetIdx) {
-    var AC = window.AudioContext || window.webkitAudioContext;
-    if (!AC) { toast('当前浏览器不支持音频处理'); return; }
-    var tmp = new AC();
-    var doDecode = function () {
-      tmp.decodeAudioData(ab, function (buf) {
-        bgmBuffer = buf; bgmName = name; bgmPreset = presetIdx;
-        refreshBgmUI(); toast('BGM 已加入，存视频时会带上');
-        tmp.close();
-        playPreview();
-      }, function () { toast('音频解析失败，请换一首'); tmp.close(); });
-    };
-    if (tmp.state === 'suspended' && typeof tmp.resume === 'function') {
-      tmp.resume().then(doDecode, doDecode);
-    } else { doDecode(); }
+    var ctx = ensureAudioCtx();
+    if (!ctx) { toast('当前浏览器不支持音频处理'); return; }
+    ctx.decodeAudioData(ab, function (buf) {
+      bgmBuffer = buf; bgmName = name; bgmPreset = presetIdx;
+      refreshBgmUI(); toast('BGM 已加入，存视频时会带上');
+      playPreview();
+    }, function () { toast('音频解析失败，请换一首'); });
   }
 
   function loadPresetBgm(i) {
     var p = PRESET_BGMS[i]; if (!p) return;
+    ensureAudioCtx();
     try {
       var bin = atob(p.b64), ab = new ArrayBuffer(bin.length), u8 = new Uint8Array(ab);
       for (var k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
@@ -3045,6 +3047,7 @@ try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
 
   function loadBgmFile(file) {
     if (!file) return;
+    ensureAudioCtx();
     var fr = new FileReader();
     fr.onload = function () { _decodeBgm(fr.result.slice(0), file.name || 'BGM', -1); };
     fr.onerror = function () { toast('音频读取失败'); };
