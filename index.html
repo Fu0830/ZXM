@@ -1058,7 +1058,7 @@ select.control{ appearance: none; -webkit-appearance: none; padding-right: 30px;
 .s-pixel .tk-end p{ letter-spacing: .14em; }
 .s-pixel .tk-tail{ background: var(--tk-deep); height: 6px; }
 
-.tk-dotlayer{ position:absolute; inset:0; z-index:0; pointer-events:none; }
+.tk-dotlayer{ position:absolute; inset:0; z-index:0; pointer-events:none; display:block; }
 .tk-basebg{ position:absolute; inset:0; z-index:0; background:#fff; pointer-events:none; }
 .slip > .tk-bar, .slip > .tk-in, .slip > .tk-code{ position:relative; z-index:1; }
 
@@ -1644,20 +1644,14 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
       deco = '<div class="tk-perf tk-perf-t" style="background-image:url(' + perfStrip() + ')"></div>' +
         '<div class="tk-perf tk-perf-b" style="background-image:url(' + perfStrip() + ')"></div>';
     }
-    $('#slip').innerHTML = '<div class="tk-basebg"></div>' + deco +
+    $('#slip').innerHTML = '<div class="tk-basebg"></div><canvas class="tk-dotlayer" id="dotLayer"></canvas>' + deco +
       '<div class="tk-bar">' + barInner + '</div>' +
       '<div class="tk-in">' + inner + '</div>' +
       '<div class="tk-code">' + barcodeSVG(state.no) + '<p>' + esc(state.no) + '</p></div>' +
       '<div class="tk-in"><div class="tk-end"><p>' + esc(blessText()) + '</p></div></div>' +
       '<div class="tk-tail"></div>';
 
-    if (state.dotOn === false) {
-      slipEl.style.backgroundImage = 'none'; slipEl.style.backgroundSize = 'auto';
-    } else {
-      var sc = Math.min(1.6, Math.max(0.7, Number(state.dotScale) || 1));
-      slipEl.style.backgroundImage = 'url(' + dotTile(state.hue, state.dotShape, sc) + ')';
-      slipEl.style.backgroundSize = Math.round(18 * sc) + 'px ' + Math.round(18 * sc) + 'px';
-    }
+    paintDotLayer();
 
     if (st === 'cream') {
       var bt = bandTile(state.hue);
@@ -1716,16 +1710,7 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     document.documentElement.dataset.night = state.night ? 'on' : 'off';
     $('#hue').value = state.hue;
     var slip = $('#slip');
-    if (slip) {
-      if (state.dotOn === false) {
-        slip.style.backgroundImage = 'none'; slip.style.backgroundSize = 'auto';
-      } else {
-        var sc = Math.min(1.6, Math.max(0.7, Number(state.dotScale) || 1));
-        var tilePx = Math.round(18 * sc);
-        slip.style.backgroundImage = 'url(' + dotTile(state.hue, state.dotShape, sc) + ')';
-        slip.style.backgroundSize = tilePx + 'px ' + tilePx + 'px';
-      }
-    }
+    if (slip) paintDotLayer();
     $('#nightBtn').setAttribute('aria-pressed', state.night ? 'true' : 'false');
     $$('.swatch').forEach(function (b) {
       b.setAttribute('aria-pressed', String(Number(b.dataset.hue) === Number(state.hue)));
@@ -1756,6 +1741,35 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     $$('.style-btn').forEach(function (b) {
       b.setAttribute('aria-pressed', String(b.dataset.style === state.style));
     });
+  }
+
+  var dotPatternImg = {};
+  function paintDotLayer() {
+    var slip = $('#slip');
+    var cv = $('#dotLayer');
+    if (!slip || !cv) return;
+    var DW = slip.clientWidth, DH = slip.clientHeight, DPR = 2;
+    cv.width = Math.max(1, DW * DPR); cv.height = Math.max(1, DH * DPR);
+    cv.style.width = DW + 'px'; cv.style.height = DH + 'px';
+    var x = cv.getContext('2d');
+    x.setTransform(DPR, 0, 0, DPR, 0, 0);
+    x.clearRect(0, 0, DW, DH);
+    if (state.dotOn === false) return;
+    var sc = Math.min(1.6, Math.max(0.7, Number(state.dotScale) || 1));
+    var url = dotTile(state.hue, state.dotShape, sc);
+    function draw(img) {
+      var pat = x.createPattern(img, 'repeat');
+      if (!pat) return;
+      x.clearRect(0, 0, DW, DH);
+      x.fillStyle = pat; x.fillRect(0, 0, DW, DH);
+    }
+    if (dotPatternImg[url] && dotPatternImg[url].complete) {
+      draw(dotPatternImg[url]);
+    } else {
+      var img = new Image();
+      img.onload = function () { dotPatternImg[url] = img; draw(img); };
+      img.src = url;
+    }
   }
 
   function buildChars() {
