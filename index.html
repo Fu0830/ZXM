@@ -574,6 +574,22 @@ select.control{ appearance: none; -webkit-appearance: none; padding-right: 30px;
 .avatar-row .btn{ height: 38px; padding: 0 14px; font-size: 12.5px; }
 .avatar-preview{ width: 46px; height: 46px; flex: none; border-radius: 12px; overflow: hidden; background: var(--ui-field); border: 1px solid var(--ui-line); display: flex; align-items: center; justify-content: center; }
 .avatar-preview img{ width: 100%; height: 100%; object-fit: cover; }
+.bg-tools{ width:100%; max-width:468px; margin:0 auto; display:grid; gap:10px; }
+.bg-tools-row{ display:flex; align-items:center; gap:9px; flex-wrap:wrap; }
+.bg-tools-row .btn{ height:38px; padding:0 14px; font-size:12.5px; }
+.bg-tools-row .btn[hidden]{ display:none !important; }
+.bg-opacity-row{ margin-top: 10px; }
+.bg-opacity-row label{ display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: var(--ui-ink-2); margin-bottom: 6px; }
+.bg-opacity-row label b{ color: var(--ui-ink); font-weight: 600; }
+.bg-opacity-row input[type=range]{ width: 100%; }
+.bg-opacity-row[hidden]{ display:none !important; }
+.crop-sheet{ position:fixed; inset:0; z-index:95; display:flex; align-items:center; justify-content:center; background:hsl(0 0% 20% / .5); backdrop-filter:blur(3px); padding:16px; }
+.crop-sheet[hidden]{ display:none; }
+.crop-dialog{ width:min(440px,100%); background:#fff; color:#1d1d20; border-radius:18px; padding:14px 16px 16px; box-shadow:0 10px 40px hsl(0 0% 10% / .26); max-height:88vh; overflow:auto; }
+.crop-stage{ position:relative; border-radius:12px; overflow:hidden; background:#f6f6f8; display:flex; align-items:center; justify-content:center; height:340px; touch-action:none; }
+.crop-stage img{ display:block; max-width:100%; max-height:340px; user-select:none; -webkit-user-drag:none; }
+.crop-box{ position:absolute; border:1.5px dashed #fff; outline:1px solid rgba(214,110,140,.9); background:rgba(214,110,140,.12); pointer-events:none; }
+
 .tk-name h3{ font-size: 16px; font-weight: 600; letter-spacing: .07em; color: var(--tk-ink); line-height: 1.3; }
 .tk-name p{
   margin-top: 2px; font-family: var(--tk-mono); font-size: 8px; letter-spacing: .24em;
@@ -1060,6 +1076,9 @@ select.control{ appearance: none; -webkit-appearance: none; padding-right: 30px;
 
 .tk-dotlayer{ position:absolute; inset:0; z-index:0; pointer-events:none; display:block; }
 .tk-basebg{ position:absolute; inset:0; z-index:0; background:#fff; pointer-events:none; }
+.tk-bglayer{ position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+.tk-bglayer img{ width:100%; height:100%; object-fit:cover; display:block; }
+
 .slip > .tk-bar, .slip > .tk-in, .slip > .tk-code{ position:relative; z-index:1; }
 
 </style>
@@ -1242,6 +1261,17 @@ select.control{ appearance: none; -webkit-appearance: none; padding-right: 30px;
   </div>
 
   <div class="stage-col">
+    <div class="bg-tools" id="bgTools">
+      <div class="bg-tools-row">
+        <button type="button" class="btn btn-ghost" id="bgUploadBtn">上传小票背景</button>
+        <button type="button" class="btn btn-ghost" id="bgClearBtn" hidden>恢复默认背景</button>
+        <input type="file" id="bgFile" accept="image/*" hidden>
+      </div>
+      <div class="bg-opacity-row" id="bgOpacityRow" hidden>
+        <label>背景透明度 <b id="bgOpacityVal">100%</b></label>
+        <input id="bgOpacity" type="range" min="10" max="100" step="1" value="100" aria-label="背景透明度">
+      </div>
+    </div>
     <div class="stage-head"><h2>结账</h2><span>CHECKOUT</span></div>
 
     <div class="printer" id="printer">
@@ -1295,6 +1325,25 @@ select.control{ appearance: none; -webkit-appearance: none; padding-right: 30px;
     </div>
   </div>
 </div>
+
+<div class="crop-sheet" id="cropSheet" hidden>
+  <div class="crop-dialog" role="dialog" aria-modal="true" aria-labelledby="cropTitle">
+    <div class="save-head">
+      <b id="cropTitle">裁剪背景图</b>
+      <button class="save-close" id="cropClose" type="button" aria-label="关闭">×</button>
+    </div>
+    <div class="crop-stage" id="cropStage">
+      <img id="cropImg" alt="待裁剪背景图">
+      <div class="crop-box" id="cropBox" hidden></div>
+    </div>
+    <p class="save-tip">在图上按住拖动，框出要保留的区域；再次拖动可重选。</p>
+    <div class="save-acts">
+      <button class="btn btn-ghost" id="cropCancel" type="button">取消</button>
+      <button class="btn btn-primary" id="cropOk" type="button">确定截取</button>
+    </div>
+  </div>
+</div>
+
 
 <script>
 /* gifenc 1.0.3 · MIT */
@@ -1596,6 +1645,9 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     var logoBlock = state.logoImg
       ? '<div class="tk-logo tk-logo-img"><img src="' + state.logoImg + '" alt="徽章头像"></div>'
       : '<div class="tk-logo">' + esc(mark) + '</div>';
+    var bgBlock = state.bgImg
+      ? '<div class="tk-bglayer"><img src="' + state.bgImg + '" style="opacity:' + state.bgOpacity + '" alt="小票背景"></div>'
+      : '';
     var fBrand = '<div class="tk-brand">' + logoBlock +
       '<div class="tk-name"><h3>' + esc(state.clubCn || '小店') + '</h3><p>' + esc(state.clubEn || '') + '</p><em>' + esc(slogan()) + '</em></div></div>';
     var fMeta = '<div class="tk-meta"><span>SETTLEMENT · 结单凭证</span><span>NO. ' + esc(state.no) + '</span></div>';
@@ -1644,7 +1696,7 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
       deco = '<div class="tk-perf tk-perf-t" style="background-image:url(' + perfStrip() + ')"></div>' +
         '<div class="tk-perf tk-perf-b" style="background-image:url(' + perfStrip() + ')"></div>';
     }
-    $('#slip').innerHTML = '<div class="tk-basebg"></div><canvas class="tk-dotlayer" id="dotLayer"></canvas>' + deco +
+    $('#slip').innerHTML = '<div class="tk-basebg"></div>' + bgBlock + '<canvas class="tk-dotlayer" id="dotLayer"></canvas>' + deco +
       '<div class="tk-bar">' + barInner + '</div>' +
       '<div class="tk-in">' + inner + '</div>' +
       '<div class="tk-code">' + barcodeSVG(state.no) + '<p>' + esc(state.no) + '</p></div>' +
@@ -1855,6 +1907,9 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
         if (!it.role || !ROLE_LABELS[it.role]) it.role = 'peipei';
       });
     if (m.logoImg === undefined) m.logoImg = '';
+    if (m.bgImg === undefined) m.bgImg = '';
+    if (m.bgOpacity === undefined || !(m.bgOpacity > 0)) m.bgOpacity = 1;
+    m.bgOpacity = Math.min(1, Math.max(0.1, Number(m.bgOpacity) || 1));
     if (m.discount === undefined) m.discount = '1';
     if (DOT_SHAPES.indexOf(m.dotShape) < 0) m.dotShape = 'circle';
     var sc = Number(m.dotScale);
@@ -2246,6 +2301,16 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     $("#logoClearBtn").hidden = !has;
     if (has) $("#logoPreviewImg").src = state.logoImg;
   }
+  function refreshBgUI() {
+    var has = !!state.bgImg;
+    $("#bgClearBtn").hidden = !has;
+    $("#bgOpacityRow").hidden = !has;
+    var pct = Math.round((state.bgOpacity || 1) * 100);
+    var slider = $("#bgOpacity");
+    if (slider) slider.value = pct;
+    var val = $("#bgOpacityVal");
+    if (val) val.textContent = pct + '%';
+  }
   /* ---------- 绑定 ---------- */
   function bind() {
     /* ---------- 徽章头像 ---------- */
@@ -2283,6 +2348,145 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
       state.logoImg = '';
       refreshLogoUI(); renderSlip(); save();
       toast('已恢复默认徽章');
+    });
+    /* ---------- 背景图裁剪 ---------- */
+    var cropState = { srcImg: null, natW: 0, natH: 0, url: '', stageRect: null, imgRect: null, dragging: false, sx: 0, sy: 0, done: null };
+    var cropStage = $('#cropStage'), cropImg = $('#cropImg'), cropBox = $('#cropBox');
+    function cropReloadRect() {
+      cropState.stageRect = cropStage.getBoundingClientRect();
+      cropState.imgRect = cropImg.getBoundingClientRect();
+    }
+    function cropBoxRect() {
+      var st = cropState.stageRect, ir = cropState.imgRect;
+      return { ix: ir.left - st.left, iy: ir.top - st.top, iw: ir.width, ih: ir.height };
+    }
+    function cropSetBox(x, y, w, h) {
+      cropBox.hidden = false;
+      cropBox.style.left = x + 'px';
+      cropBox.style.top = y + 'px';
+      cropBox.style.width = Math.max(0, w) + 'px';
+      cropBox.style.height = Math.max(0, h) + 'px';
+    }
+    function cropOpen(file, done) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        cropState.srcImg = img;
+        cropState.natW = img.naturalWidth;
+        cropState.natH = img.naturalHeight;
+        cropState.url = url;
+        cropState.done = done;
+        cropImg.onload = function () {
+          $('#cropSheet').hidden = false;
+          requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+              cropReloadRect();
+              var r = cropBoxRect();
+              cropSetBox(r.ix, r.iy, r.iw, r.ih);
+            });
+          });
+        };
+        cropImg.src = url;
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); toast('背景图读取失败，请换一张'); };
+      img.src = url;
+    }
+    function cropPoint(ev) {
+      var st = cropState.stageRect, ir = cropState.imgRect;
+      var px = ev.clientX - st.left, py = ev.clientY - st.top;
+      var ix = ir.left - st.left, iy = ir.top - st.top;
+      px = Math.min(ir.right - st.left, Math.max(ix, px));
+      py = Math.min(ir.bottom - st.top, Math.max(iy, py));
+      return { x: px, y: py };
+    }
+    cropStage.addEventListener('pointerdown', function (ev) {
+      ev.preventDefault();
+      cropReloadRect();
+      var p = cropPoint(ev);
+      cropState.dragging = true;
+      cropState.sx = p.x; cropState.sy = p.y;
+      cropBox.hidden = true;
+      try { cropStage.setPointerCapture(ev.pointerId); } catch (e) {}
+    });
+    cropStage.addEventListener('pointermove', function (ev) {
+      if (!cropState.dragging) return;
+      var p = cropPoint(ev);
+      var x1 = Math.min(cropState.sx, p.x), y1 = Math.min(cropState.sy, p.y);
+      var x2 = Math.max(cropState.sx, p.x), y2 = Math.max(cropState.sy, p.y);
+      cropSetBox(x1, y1, x2 - x1, y2 - y1);
+    });
+    function cropEnd() {
+      if (!cropState.dragging) return;
+      cropState.dragging = false;
+      if (cropBox.offsetWidth < 12 || cropBox.offsetHeight < 12) {
+        var r = cropBoxRect();
+        cropSetBox(r.ix, r.iy, r.iw, r.ih);
+      }
+    }
+    cropStage.addEventListener('pointerup', cropEnd);
+    cropStage.addEventListener('pointercancel', cropEnd);
+    function cropCloseSheet() {
+      $('#cropSheet').hidden = true;
+      if (cropState.url) URL.revokeObjectURL(cropState.url);
+      cropState.url = ''; cropState.srcImg = null; cropState.done = null;
+      cropImg.removeAttribute('src');
+    }
+    function cropConfirm() {
+      var img = cropState.srcImg;
+      if (!img) { cropCloseSheet(); return; }
+      var st = cropState.stageRect, ir = cropState.imgRect;
+      var bx = cropBox.offsetLeft, by = cropBox.offsetTop;
+      var bw = cropBox.offsetWidth, bh = cropBox.offsetHeight;
+      var ix = bx - (ir.left - st.left), iy = by - (ir.top - st.top);
+      var sx = ix / ir.width * cropState.natW;
+      var sy = iy / ir.height * cropState.natH;
+      var sw = bw / ir.width * cropState.natW;
+      var sh = bh / ir.height * cropState.natH;
+      sx = Math.min(cropState.natW, Math.max(0, sx));
+      sy = Math.min(cropState.natH, Math.max(0, sy));
+      sw = Math.min(cropState.natW - sx, sw);
+      sh = Math.min(cropState.natH - sy, sh);
+      if (sw < 8 || sh < 8) { toast('选区太小，请重选'); return; }
+      var max = 800, ow = sw, oh = sh;
+      if (ow > max || oh > max) {
+        var k = Math.min(max / ow, max / oh);
+        ow = Math.round(ow * k); oh = Math.round(oh * k);
+      }
+      var cv = document.createElement('canvas');
+      cv.width = ow; cv.height = oh;
+      cv.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, ow, oh);
+      var dataUrl = cv.toDataURL('image/jpeg', 0.85);
+      var done = cropState.done;
+      cropCloseSheet();
+      if (done) done(dataUrl);
+    }
+    $('#cropClose').addEventListener('click', cropCloseSheet);
+    $('#cropCancel').addEventListener('click', cropCloseSheet);
+    $('#cropOk').addEventListener('click', cropConfirm);
+    $('#bgUploadBtn').addEventListener('click', function () { $('#bgFile').click(); });
+    $('#bgFile').addEventListener('change', function (e) {
+      var f = e.target.files && e.target.files[0];
+      if (!f) return;
+      cropOpen(f, function (dataUrl) {
+        state.bgImg = dataUrl;
+        if (!(state.bgOpacity > 0)) state.bgOpacity = 1;
+        refreshBgUI(); renderSlip(); save();
+        toast('小票背景已更新');
+      });
+      e.target.value = '';
+    });
+    $('#bgClearBtn').addEventListener('click', function () {
+      state.bgImg = '';
+      refreshBgUI(); renderSlip(); save();
+      toast('已恢复默认背景');
+    });
+    $('#bgOpacity').addEventListener('input', function () {
+      state.bgOpacity = Math.min(1, Math.max(0.1, Number(this.value) / 100));
+      var pct = Math.round(state.bgOpacity * 100);
+      var val = $('#bgOpacityVal'); if (val) val.textContent = pct + '%';
+      var img = document.querySelector('.tk-bglayer img');
+      if (img) img.style.opacity = state.bgOpacity;
+      save();
     });
     $('#items').addEventListener('input', function (e) {
       var card = e.target.closest('.item-card');
@@ -2468,6 +2672,8 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     stampText: '话',
     character: 'kitty',
     logoImg: '',
+    bgImg: '',
+    bgOpacity: 1,
     hue: 352,
     night: false,
     dotShape: 'circle',
@@ -2539,6 +2745,7 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
   bind();
   bindStampSelect();
   refreshLogoUI();
+  refreshBgUI();
 })();
 </script>
 </body>
