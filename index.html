@@ -1115,7 +1115,16 @@ select.control{ appearance: none; -webkit-appearance: none; padding-right: 30px;
       <div class="panel-title"><span class="dot"></span>角色主题<small>CHARACTER</small></div>
       <div class="panel-body">
         <div class="char-grid" id="charGrid"></div>
-        <p class="char-hint">换角色会连配色一起换，色相滑杆仍可自由微调</p>
+        <div class="avatar-row">
+          <button type="button" class="btn btn-ghost" id="themeUploadBtn">更换主题图片</button>
+          <button type="button" class="btn btn-ghost" id="themeClearBtn" hidden>恢复默认角色</button>
+          <input type="file" id="themeFile" accept="image/*" hidden>
+        </div>
+        <div class="field" id="themeNameField" hidden>
+          <label for="themeName">自定义形象名字<span class="hint">印在角色图下方，留空显示“自定义形象”</span></label>
+          <input id="themeName" class="control" autocomplete="off" spellcheck="false" maxlength="12" placeholder="给这个形象起个名字">
+        </div>
+        <p class="char-hint">上传的图片自动抠成透明底；GIF/WebP 动图保留原动效；换角色会连配色一起换，色相滑杆仍可自由微调</p>
       </div>
     </section>
 
@@ -1402,6 +1411,43 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     var n = parseFloat(String(v == null ? '' : v).replace(/[^0-9.\-]/g, ''));
     return isFinite(n) ? n : 0;
   }
+  /* 自定义主题图尺寸缓存（dataUrl -> {w,h}） */
+  var themeDim = {};
+
+  /* 自动抠图：把近白/近灰背景透明化，保留主体，边缘做羽化 */
+  function cutoutToTransparent(img, done) {
+    var maxSide = 420;
+    var w = img.width, h = img.height;
+    var k = Math.min(1, maxSide / Math.max(w, h));
+    w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k));
+    var cv = document.createElement('canvas');
+    cv.width = w; cv.height = h;
+    var ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0, w, h);
+    var data;
+    try { data = ctx.getImageData(0, 0, w, h); } catch (e) { done(cv.toDataURL('image/png'), w, h); return; }
+    var px = data.data, n = px.length;
+    var corners = [[0,0],[w-1,0],[0,h-1],[w-1,h-1]];
+    var br=[],bg=[],bb=[];
+    corners.forEach(function(c){var i=(c[1]*w+c[0])*4;br.push(px[i]);bg.push(px[i+1]);bb.push(px[i+2]);});
+    br.sort((a,b)=>a-b);bg.sort((a,b)=>a-b);bb.sort((a,b)=>a-b);
+    var R=br[1],G=bg[1],B=bb[1];
+    var thHi=235, thLo=205;
+    for (var i=0;i<n;i+=4) {
+      var r=px[i],g=px[i+1],b=px[i+2],a=px[i+3];
+      if (a===0) continue;
+      var dr=r-R, dg=g-G, db=b-B;
+      var dist=Math.sqrt(dr*dr+dg*dg+db*db);
+      var lum=(r+g+b)/3;
+      var bgScore = (dist < 34) && (lum > thLo);
+      if (bgScore) {
+        var t = lum > thHi || dist < 18 ? 1 : (lum-thLo)/(thHi-thLo);
+        px[i+3] = Math.round(a*(1-Math.max(0,Math.min(1,t))));
+      }
+    }
+    ctx.putImageData(data,0,0);
+    done(cv.toDataURL('image/png'), w, h);
+  }
   function fmt(n) {
     if (!isFinite(n)) return '0';
     return Math.abs(n - Math.round(n)) < 0.005 ? String(Math.round(n)) : n.toFixed(2);
@@ -1639,7 +1685,24 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     var mark = head.length >= 2 ? head.slice(0, 2).toUpperCase() : (en ? en.slice(0, 3).toUpperCase() : 'RP');
     var count = state.items.length;
     var ch = CHARS[state.character] || CHARS.kitty;
-    var heroSrc = ch.img, heroName = ch.name, heroStyle = 'height:' + ch.h + 'px';
+    var customImg = state.themeImg || '';
+    var heroSrc, heroName, heroStyle;
+    if (customImg) {
+      var dim = themeDim[customImg] || null;
+      var hh = 112, ww = null;
+      if (dim && dim.w && dim.h) {
+        hh = Math.min(128, dim.h);
+        ww = Math.round(dim.w * (hh / dim.h));
+      }
+      heroSrc = customImg;
+      heroName = String(state.themeName || '').trim() || '自定义形象';
+      heroStyle = 'height:' + hh + 'px' + (ww ? ';width:' + ww + 'px' : '');
+    } else {
+      heroSrc = ch.img;
+      heroName = ch.name;
+      heroStyle = 'height:' + ch.h + 'px';
+    }
+
 
     var stampBlock = '<div class="tk-stamp"><b>' + esc(stampDisplay()) + '</b><small>' + esc(stampEnAuto()) + '</small></div>';
     var logoBlock = state.logoImg
@@ -1910,6 +1973,8 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     if (m.bgImg === undefined) m.bgImg = '';
     if (m.bgOpacity === undefined || !(m.bgOpacity > 0)) m.bgOpacity = 1;
     m.bgOpacity = Math.min(1, Math.max(0.1, Number(m.bgOpacity) || 1));
+    if (m.themeImg === undefined) m.themeImg = '';
+    if (m.themeName === undefined) m.themeName = '';
     if (m.discount === undefined) m.discount = '1';
     if (DOT_SHAPES.indexOf(m.dotShape) < 0) m.dotShape = 'circle';
     var sc = Number(m.dotScale);
@@ -2295,6 +2360,12 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
 
   /* ---------- 绑定 ---------- */
   /* ---------- 徽章头像 ---------- */
+  function refreshThemeUI() {
+    var has = !!state.themeImg;
+    $("#themeClearBtn").hidden = !has;
+    $("#themeNameField").hidden = !has;
+    $("#themeName").value = has ? (state.themeName || '') : '';
+  }
   function refreshLogoUI() {
     var has = !!state.logoImg;
     $("#logoPreview").hidden = !has;
@@ -2349,6 +2420,59 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
       refreshLogoUI(); renderSlip(); save();
       toast('已恢复默认徽章');
     });
+    /* ---------- 自定义主题图（自动抠透明底 / 动图保留动效） ---------- */
+    function loadThemeFile(file, done) {
+      var mime = (file.type || '').toLowerCase();
+      var animated = (mime === 'image/gif' || mime === 'image/webp' || mime === 'image/apng');
+      if (animated) {
+        var fr = new FileReader();
+        fr.onload = function () {
+          var dataUrl = fr.result;
+          var probe = new Image();
+          probe.onload = function () { themeDim[dataUrl] = { w: probe.width, h: probe.height }; done(dataUrl, true); };
+          probe.onerror = function () { themeDim[dataUrl] = { w: 0, h: 0 }; done(dataUrl, true); };
+          probe.src = dataUrl;
+        };
+        fr.onerror = function () { toast('动图读取失败，请换一张'); };
+        fr.readAsDataURL(file);
+        return;
+      }
+      var img = new Image();
+      var url = URL.createObjectURL(file);
+      img.onload = function () {
+        URL.revokeObjectURL(url);
+        cutoutToTransparent(img, function (dataUrl, w, h) {
+          themeDim[dataUrl] = { w: w, h: h };
+          done(dataUrl, false);
+        });
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); toast('图片读取失败，请换一张'); };
+      img.src = url;
+    }
+    $('#themeUploadBtn').addEventListener('click', function () { $('#themeFile').click(); });
+    $('#themeFile').addEventListener('change', function (e) {
+      var f = e.target.files && e.target.files[0];
+      if (!f) return;
+      var isAnimated = /gif|webp|apng/.test((f.type || '').toLowerCase());
+      if (!isAnimated) toast('正在抠图…');
+      loadThemeFile(f, function (dataUrl, animated) {
+        state.themeImg = dataUrl;
+        refreshThemeUI(); renderSlip(); save();
+        toast(animated ? '主题动图已更新（保留动效）' : '主题图片已更新（透明底）');
+      });
+      e.target.value = '';
+    });
+    $('#themeClearBtn').addEventListener('click', function () {
+      state.themeImg = '';
+      state.themeName = '';
+      refreshThemeUI(); renderSlip(); save();
+      toast('已恢复默认角色');
+    });
+    $('#themeName').addEventListener('input', function () {
+      state.themeName = this.value;
+      renderSlip(); save();
+    });
+
     /* ---------- 背景图裁剪 ---------- */
     var cropState = { srcImg: null, natW: 0, natH: 0, url: '', stageRect: null, imgRect: null, dragging: false, sx: 0, sy: 0, done: null };
     var cropStage = $('#cropStage'), cropImg = $('#cropImg'), cropBox = $('#cropBox');
@@ -2568,6 +2692,9 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
       if (!b) return;
       state.character = b.dataset.ch;
       state.hue = CHARS[state.character].hue;
+      state.themeImg = '';
+      state.themeName = '';
+      refreshThemeUI();
       applyTheme(); syncForm(); renderSlip(); save();
       toast('已换成「' + CHARS[state.character].name + '」主题');
     });
@@ -2674,6 +2801,8 @@ var X={signature:"GIF",version:"89a",trailer:59,extensionIntroducer:33,applicati
     logoImg: '',
     bgImg: '',
     bgOpacity: 1,
+    themeImg: '',
+    themeName: '',
     hue: 352,
     night: false,
     dotShape: 'circle',
