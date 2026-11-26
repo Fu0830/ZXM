@@ -2988,11 +2988,16 @@ try { exports.GifWriter = GifWriter; exports.GifReader = GifReader } catch(e) {}
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) { toast('当前浏览器不支持音频处理'); return; }
     var tmp = new AC();
-    tmp.decodeAudioData(ab, function (buf) {
-      bgmBuffer = buf; bgmName = name; bgmPreset = presetIdx;
-      refreshBgmUI(); toast('BGM 已加入，存视频时会带上');
-      tmp.close();
-    }, function () { toast('音频解析失败，请换一首'); tmp.close(); });
+    var doDecode = function () {
+      tmp.decodeAudioData(ab, function (buf) {
+        bgmBuffer = buf; bgmName = name; bgmPreset = presetIdx;
+        refreshBgmUI(); toast('BGM 已加入，存视频时会带上');
+        tmp.close();
+      }, function () { toast('音频解析失败，请换一首'); tmp.close(); });
+    };
+    if (tmp.state === 'suspended' && typeof tmp.resume === 'function') {
+      tmp.resume().then(doDecode, doDecode);
+    } else { doDecode(); }
   }
 
   function loadPresetBgm(i) {
